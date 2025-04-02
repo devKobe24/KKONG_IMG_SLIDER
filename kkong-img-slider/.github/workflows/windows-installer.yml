@@ -1,0 +1,51 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: 파라메트리 캐시 파일 가져오기
+        uses: actions/checkout@v3
+
+      - name: Java 17 설치
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Gradle 빌드
+        run: ./gradlew build
+
+      - name: Setup jpackage environment
+        run: |
+          echo JAVA_HOME is %JAVA_HOME%
+          dir %JAVA_HOME%\bin
+
+      - name: Create Windows Installer (.exe)
+        run: |
+          mkdir dist
+          jpackage ^
+            --input build\libs ^
+            --name ImageSlideshow ^
+            --main-jar kkong-img-slider-1.0-SNAPSHOT.jar ^
+            --main-class com.kobe.kkong.img.slider.ImageSlideshowWithFadeAndResize ^
+            --type exe ^
+            --icon icon.ico ^
+            --win-menu ^
+            --win-shortcut ^
+            --win-dir-chooser ^
+            --dest dist ^
+            --app-version 1.0.0 ^
+            --resource-dir install
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: installer-exe
+          path: dist/*.exe
